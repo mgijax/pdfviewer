@@ -220,7 +220,7 @@ def getReferenceDataFromDatabase (refID):
 		from bib_citation_cache c, acc_accession a
 		where a._MGIType_key = 1
 			and a._Object_key = c._Refs_key
-			and a.accID = '%s' ''' % refID
+			and lower(a.accID) = '%s' ''' % refID.lower()
 
 	results = pg_db.sql(cmd, 'auto')
 	if len(results) > 0:
