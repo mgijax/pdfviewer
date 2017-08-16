@@ -58,12 +58,23 @@ else:
 ###--- Query Form ---###
 
 FORM = '''
-<HTML><HEAD><TITLE>pdfviewer</TITLE></HEAD>
+<HTML><HEAD><TITLE>pdfviewer</TITLE>
+<SCRIPT>
+function formSubmit() {
+  var accids = document.getElementById('accids').value;
+  if ((accids.indexOf(",") >= 0) || (accids.indexOf(" ") >= 0)) {
+  	document.getElementById('pdfForm').target = "";
+  } else {
+  	document.getElementById('pdfForm').target = "_blank";
+  }
+}
+</SCRIPT>
+</HEAD>
 <BODY>
 <H3>pdfviewer</H3>
-<FORM ACTION="pdfviewer.cgi" METHOD="GET">
+<FORM ID="pdfForm" ACTION="pdfviewer.cgi" METHOD="GET" onSubmit="formSubmit()">
 Enter the ID for a reference to retrieve:
-<INPUT TYPE="text" NAME="id" WIDTH="30">
+<INPUT TYPE="text" NAME="id" WIDTH="30" ID="accids">
 &nbsp;&nbsp;<input type="submit" name="Go" value="Go" />
 &nbsp;&nbsp;<span style="color: blue" title="Accepts:  MGI, J:, PubMed, DOI, GO REF">Help</span>
 <p>
