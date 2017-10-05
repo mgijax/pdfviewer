@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Name: Install
+# Purpose: do any setup necessary for pdfviewer product
+
+./gen_cache.py

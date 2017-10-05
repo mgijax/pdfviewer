@@ -1,7 +1,5 @@
 #!/usr/local/bin/python
 
-# sto172
-
 # Name: pdfviewer.cgi
 # Purpose: provide access to PDF files, either via linking from the PWI or
 #	by curators entering IDs directly
@@ -12,24 +10,21 @@
 # 3. We could link directly to PDF files served up through Apache, but using
 #	this script will allow us to set HTTP headers that give a more
 #	meaningful filename when a curators saves the PDF file locally.
-# 4. Per curators, speed is of the essence for this script.  Initial tests
-#	of pulling the full set of reference data from the db and saving it in
-#	a data structure (using cPickle) in the file system were less than
-#	desirable.  (28 seconds to pull data from db, 16 to save the file, 5
-#	to load from the file on the next execution)  As such, we're going to
-#	need to be more	clever...
-# 5. Database interactivity in this script is read-only.
+# 4. Database interactivity in this script is read-only.
+# 5. Whenever possible we use the database to do ID lookups.  In cases where
+#	the database is unavailable, we fall back on disk caching managed by the
+#	IDCache module.
 
 import os
-import time
 import cgi
 import types
 import sys
 sys.path.insert(0, '/usr/local/mgi/live/lib/python')
-sys.path.insert(0, '/home/jsb/jax/prod/lib/python')
 
 import pg_db
 import Pdfpath
+import IDCache
+import Profiler
 
 mgiconfigPath = '/usr/local/mgi/live/mgiconfig'
 if 'MGICONFIG' in os.environ:
@@ -45,14 +40,17 @@ except:
 ###--- Globals ---###
 
 DEBUG = False			# debugging to stderr on (True) or off (False)?
-START_TIME = time.time()	# start time of the script (ms since epoch)
+profiler = Profiler.Profiler()
+
 
 if hasMasterConfig:
+	sys.stderr.write('from masterConfig\n')
 	pg_db.set_sqlServer(masterConfig.MGD_DBSERVER)
 	pg_db.set_sqlDatabase(masterConfig.MGD_DBNAME)
 	pg_db.set_sqlUser(masterConfig.MGD_DBUSER)
 	pg_db.set_sqlPasswordFromFile(masterConfig.MGD_DBPASSWORDFILE)
 else:
+	sys.stderr.write('from adhoc\n')
 	pg_db.set_sqlLogin('mgd_public', 'mgdpub', 'mgi-adhoc', 'mgd')
 
 ###--- Query Form ---###
@@ -86,11 +84,6 @@ Enter the ID for a reference to retrieve:
 
 ###--- Functions ---###
 
-def debug(s):
-	if DEBUG:
-		sys.stderr.write('%8.3f : %s\n' % (time.time() - START_TIME, s))
-	return
-
 def parseParameters():
 	# Purpose: identify any parameters from the user
 	# Return: dictionary, maps parameter name to value
@@ -106,7 +99,7 @@ def parseParameters():
 		for item in form.getlist('id'):
 			params['id'] = '%s, %s' % (params['id'], item)
 		params['id'] = params['id'][2:]
-	debug("parsed parameters")
+	profiler.stamp("parsed parameters")
 	return params
 
 def sendForm(accids = None, error = None):
@@ -134,7 +127,7 @@ def sendForm(accids = None, error = None):
 		FORM % ids
 		]
 	print '\n'.join(page)
-	debug("sent form")
+	profiler.stamp("sent form")
 	return
 
 def sendPDF(refID):
@@ -148,13 +141,13 @@ def sendPDF(refID):
 	# 5. send PDF
 
 	try:
-		mgiID, jnum = getReferenceDataFromDatabase(refID)
+		mgiID, jnum = getReferenceData(refID)
 	except:
-		debug("failed to query database")
+		profiler.stamp("failed to get reference info")
 		sendForm(error = sys.exc_info()[1])
 		return
 
-	debug("queried database")
+	profiler.stamp("queried database")
 
 	if (mgiID == None):
 		if refID.startswith("MGI:"):
@@ -172,7 +165,7 @@ def sendPDF(refID):
 		sendForm(error = "Cannot find file: %s" % filepath)
 		return
 
-	debug("found path: %s" % filepath)
+	profiler.stamp("found path: %s" % filepath)
 
 	newFilename = mgiID.replace('MGI:', '')
 	if jnum:
@@ -186,7 +179,7 @@ def sendPDF(refID):
 	
 	infile = open(filepath, 'rb')
 
-	debug("opened input file")
+	profiler.stamp("opened input file")
 
 	readSize = 256 * 1024 * 1024		# 256 Mb
 	chunk = infile.read(readSize)
@@ -196,7 +189,7 @@ def sendPDF(refID):
 
 	infile.close() 
 
-	debug("read input file and sent PDF")
+	profiler.stamp("read input file and sent PDF")
 	return
 
 def canReadFromDatabase():
@@ -208,24 +201,25 @@ def canReadFromDatabase():
 	except:
 		return False
 
-	debug("tested db connection")
+	profiler.stamp("tested db connection")
 	return True
 
-# 1. Search the database for the given ID.
+# 1. If we can search the database, do so for the given ID.
 #    a. If no results, is faulty ID.
 #    b. If has results, use them.
-# 2. If exception occurs, cannot read from database.
-#    a. If given ID begins with "MGI:" then can still find and return the file.
-#    b. Otherwise we would need to deal with external data files.
+# 2. If cannot search the database, fall back on data from IDCache.
 
-def getReferenceDataFromDatabase (refID):
+def getReferenceData (refID):
 	# Purpose: The fastest way to get the necessary ID data for a reference
-	#	is to query the database.
+	#	is to query the database.  If we can't do that, fall back on cache
+	#	files, if available.
 	# Returns: (MGI ID, J: number) or (None, None) if 'refID' is unknown
 	# Throws: Exception if we cannot query the database
 
 	if not canReadFromDatabase():
-		raise Exception("Cannot read from database")
+		searcher = IDCache.CacheSearcher()
+		sys.stderr.write('Reading from cached IDs\n')
+		return searcher.lookup(refID)
 
 	cmd = '''select c.jnumID, c.mgiID
 		from bib_citation_cache c, acc_accession a
@@ -242,7 +236,7 @@ def getReferenceDataFromDatabase (refID):
 ###--- Main Program ---###
 
 if __name__ == '__main__':
-#	try:
+	try:
 		params = parseParameters()
 		if 'id' in params:
 			if (' ' in params['id']) or (',' in params['id']):
@@ -252,5 +246,9 @@ if __name__ == '__main__':
 				sendPDF(params['id'])
 		else:
 			sendForm()
-#	except:
-#		sendForm(error = sys.exc_info()[1])
+			
+		if DEBUG:
+			sys.stdout = sys.stderr
+			profiler.write()
+	except:
+		sendForm(error = sys.exc_info()[1])
