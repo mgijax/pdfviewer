@@ -3,4 +3,32 @@
 # Name: Install
 # Purpose: do any setup necessary for pdfviewer product
 
+if [ ! -e ./Configuration ]; then
+    echo "Missing Configuration file"
+    exit 1
+fi
+
+CACHE_DIR=`grep 'CACHE_DIR' ./Configuration | awk '{print $2}'`
+
+if [ ! -d ${CACHE_DIR} ]; then
+    mkdir ${CACHE_DIR}
+    if [ $? -ne 0 ]; then
+        echo "Cannot create ${CACHE_DIR}"
+        exit 1
+    fi
+
+    chmod a+rx ${CACHE_DIR}
+    if [ $? -ne 0 ]; then
+        echo "Cannot chmod ${CACHE_DIR}"
+        exit 1
+    fi
+fi
+
 ./gen_cache.py
+if [ $? -eq 0 ]; then
+    echo "Wrote caches to ${CACHE_DIR} -- Done"
+    exit 0
+else
+    echo "Failed to write caches to ${CACHE_DIR}"
+    exit 1
+fi

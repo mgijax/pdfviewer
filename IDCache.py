@@ -12,10 +12,13 @@
 import glob
 import os
 import runCommand
+import Configuration
 
 ###--- globals ---###
 
-CACHE_DIR = '/tmp'
+config = Configuration.Configuration('Configuration')
+
+CACHE_DIR = config['CACHE_DIR']
 LOOKUP_FILENAME = 'pdfviewer.idCache.lookup'
 SEARCH_FILENAME_PREFIX = 'pdfviewer.idCache.search'
 NUM_BUCKETS = 10

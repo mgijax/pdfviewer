@@ -1,0 +1,2 @@
+# where the cache files will be written
+CACHE_DIR	/data/pdfviewer/
