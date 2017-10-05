@@ -44,13 +44,11 @@ profiler = Profiler.Profiler()
 
 
 if hasMasterConfig:
-	sys.stderr.write('from masterConfig\n')
 	pg_db.set_sqlServer(masterConfig.MGD_DBSERVER)
 	pg_db.set_sqlDatabase(masterConfig.MGD_DBNAME)
 	pg_db.set_sqlUser(masterConfig.MGD_DBUSER)
 	pg_db.set_sqlPasswordFromFile(masterConfig.MGD_DBPASSWORDFILE)
 else:
-	sys.stderr.write('from adhoc\n')
 	pg_db.set_sqlLogin('mgd_public', 'mgdpub', 'mgi-adhoc', 'mgd')
 
 ###--- Query Form ---###
@@ -218,7 +216,6 @@ def getReferenceData (refID):
 
 	if not canReadFromDatabase():
 		searcher = IDCache.CacheSearcher()
-		sys.stderr.write('Reading from cached IDs\n')
 		return searcher.lookup(refID)
 
 	cmd = '''select c.jnumID, c.mgiID
@@ -248,7 +245,6 @@ if __name__ == '__main__':
 			sendForm()
 			
 		if DEBUG:
-			sys.stdout = sys.stderr
 			profiler.write()
 	except:
 		sendForm(error = sys.exc_info()[1])
