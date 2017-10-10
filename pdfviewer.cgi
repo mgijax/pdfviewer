@@ -114,7 +114,10 @@ def sendForm(accids = None, error = None):
 
 	ids = ''
 	myIDs = ''
-	if accids:
+	if error:
+		ids = 'Error: %s' % error
+
+	elif accids:
 		idList = [
 			'Your %d requested PDFs are available here:<br/>' % \
 				len(accids),
@@ -125,10 +128,9 @@ def sendForm(accids = None, error = None):
 
 		idList.append('</ul>')
 		ids = '\n'.join(idList)
-		myIDs = ','.join(accids)
 
-	elif error:
-		ids = 'Error: %s' % error
+	if accids:
+		myIDs = ','.join(accids)
 
 	page = [
 		'Content-type: text/html',
@@ -153,7 +155,7 @@ def sendPDF(refID):
 		mgiID, jnum = getReferenceData(refID)
 	except:
 		profiler.stamp("failed to get reference info")
-		sendForm(error = sys.exc_info()[1])
+		sendForm(accids = [refID], error = sys.exc_info()[1])
 		return
 
 	profiler.stamp("queried database")
@@ -162,7 +164,7 @@ def sendPDF(refID):
 		if refID.startswith("MGI:"):
 			mgiID = refID
 		else:
-			sendForm(error = "Unknown ID: %s" % refID)
+			sendForm(accids = [refID], error = "Unknown ID: %s" % refID)
 			return
 
 	prefix, numeric = mgiID.split(':')
@@ -171,7 +173,7 @@ def sendPDF(refID):
 		numeric + '.pdf')
 
 	if not os.path.exists(filepath):
-		sendForm(error = "Cannot find file: %s" % filepath)
+		sendForm(accids = [refID], error = "Cannot find file: %s" % filepath)
 		return
 
 	profiler.stamp("found path: %s" % filepath)
@@ -244,9 +246,11 @@ def getReferenceData (refID):
 ###--- Main Program ---###
 
 if __name__ == '__main__':
+	idfield = ''
 	try:
 		params = parseParameters()
 		if 'id' in params:
+			idfield = params['id']
 			if (' ' in params['id']) or (',' in params['id']):
 				accids = params['id'].replace(',', ' ').split()
 				sendForm(accids)
@@ -258,4 +262,4 @@ if __name__ == '__main__':
 		if DEBUG:
 			profiler.write()
 	except:
-		sendForm(error = sys.exc_info()[1])
+		sendForm(idfield, error = sys.exc_info()[1])
