@@ -70,9 +70,18 @@ function formSubmit() {
 <H3>pdfviewer</H3>
 <FORM ID="pdfForm" ACTION="pdfviewer.cgi" METHOD="GET" onSubmit="formSubmit()">
 Enter the ID for a reference to retrieve:
-<INPUT TYPE="text" NAME="id" WIDTH="30" ID="accids">
+<INPUT TYPE="text" NAME="id" WIDTH="30" ID="accids" VALUE="%s">
 &nbsp;&nbsp;<input type="submit" name="Go" value="Go" />
-&nbsp;&nbsp;<span style="color: blue" title="Accepts:  MGI, J:, PubMed, DOI, GO REF">Help</span>
+<p>
+Help:<br/>
+<UL>
+<LI>Valid types of IDs: J number, DOI, PubMed, GO_REF, MGI Reference
+<LI>Prefix required for J numbers, GO_REF, MGI Reference IDs (e.g. J:, GO_REF:, MGI:)
+<LI>Prefix not accepted for DOI or PubMed IDs
+<LI>A single or list of IDs may be entered. The IDs may be of one type or a mix.
+<LI>Lists may be delimited by comma, space, or newline/carriage return
+<LI>A list of IDs may be entered using Cut/Paste from an Excel file or QC report.
+</UL>
 <p>
 %s
 </FORM>
@@ -104,6 +113,7 @@ def sendForm(accids = None, error = None):
 	# Generate and send the query form out to the user
 
 	ids = ''
+	myIDs = ''
 	if accids:
 		idList = [
 			'Your %d requested PDFs are available here:<br/>' % \
@@ -115,6 +125,7 @@ def sendForm(accids = None, error = None):
 
 		idList.append('</ul>')
 		ids = '\n'.join(idList)
+		myIDs = ','.join(accids)
 
 	elif error:
 		ids = 'Error: %s' % error
@@ -122,7 +133,7 @@ def sendForm(accids = None, error = None):
 	page = [
 		'Content-type: text/html',
 		'',
-		FORM % ids
+		FORM % (myIDs, ids)
 		]
 	print '\n'.join(page)
 	profiler.stamp("sent form")
