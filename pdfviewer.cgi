@@ -19,6 +19,8 @@ import os
 import cgi
 import types
 import sys
+import subprocess
+import datetime
 sys.path.insert(0, '/usr/local/mgi/live/lib/python')
 
 import pg_db
@@ -106,6 +108,9 @@ def parseParameters():
 		for item in form.getlist('id'):
 			params['id'] = '%s, %s' % (params['id'], item)
 		params['id'] = params['id'][2:]
+		
+	if 'zip' in form:
+		params['zip'] = True
 	profiler.stamp("parsed parameters")
 	return params
 
@@ -203,6 +208,86 @@ def sendPDF(refID):
 	profiler.stamp("read input file and sent PDF")
 	return
 
+def sendZip(refIDs):
+	# Purpose: send out a zip file containing multiple PDFs
+
+	pdfFiles = []		# list of files, each with (path to PDF file, new name of PDF file)
+	
+	# go through the input IDs and populate pdfFiles with a tuple for each
+
+	for refID in refIDs:
+		try:
+			mgiID, jnum = getReferenceData(refID)
+		except:
+			profiler.stamp("failed to get reference info")
+			sendForm(accids = [refID], error = sys.exc_info()[1])
+			return
+
+		if (mgiID == None):
+			if refID.startswith("MGI:"):
+				mgiID = refID
+			else:
+				sendForm(accids = [refID], error = "Unknown ID: %s" % refID)
+				return
+
+		prefix, numeric = mgiID.split(':')
+
+		filepath = os.path.join(Pdfpath.getPdfpath('/data/littriage', mgiID), numeric + '.pdf')
+
+		if not os.path.exists(filepath):
+			sendForm(accids = [refID], error = "Cannot find file: %s" % filepath)
+			return
+
+		profiler.stamp("found path: %s" % filepath)
+
+		newFilename = mgiID.replace('MGI:', '')
+		if jnum:
+			newFilename = '%s_%s.pdf' % (newFilename, jnum.replace(':', ''))
+		else:
+			newFilename = '%s.pdf' % newFilename
+			
+		pdfFiles.append( (filepath, newFilename) )
+
+	# if we made it here, then we've confirmed that all the relevant IDs and files exist, so go
+	# ahead with producing the zip output
+	
+	# yyyy-mm-dd-HH-MM-SS-UUU (milliseconds at the end)
+	timestamp = str(datetime.datetime.now()).replace(' ', '-').replace(':', '-').replace('.', '-')[:-3]
+	zipFilename = 'pdf_packet_%d_files_%s.zip' % (len(pdfFiles), timestamp)
+	zipFilepath = '/tmp/%s' % zipFilename
+	
+	# -@ means to take input filenames from stdin
+	# -j means to discard (junk) the paths and keep only the filenames in the zip file
+	zipProcess = subprocess.Popen(['/usr/bin/zip', '-@', '-j', zipFilepath], stdin=subprocess.PIPE)
+	for (filepath, newFilename) in pdfFiles:
+		zipProcess.stdin.write(filepath + '\n')
+	zipProcess.stdin.flush()
+	zipProcess.stdin.close()
+	returnCode = zipProcess.wait()
+	
+	if returnCode != 0:
+		sendForm(accids = [refID], error = "Could not build zip file (code %d, stderr %s)" % (returnCode, stderr))
+		return
+	
+	print 'Content-type: application/zip'
+	print 'Content-Disposition: inline; filename="%s"' % zipFilename
+	print
+	
+	infile = open(zipFilepath, 'rb')
+
+	profiler.stamp("opened input file")
+
+	readSize = 256 * 1024 * 1024		# 256 Mb
+	chunk = infile.read(readSize)
+	while (chunk):
+		sys.stdout.write(chunk)
+		chunk = infile.read(readSize)
+
+	infile.close() 
+	profiler.stamp('closed output zip stream')
+	os.unlink(zipFilepath)
+	return
+	
 def canReadFromDatabase():
 	# Purpose: tests database connectivity
 	# Returns: True if okay, False if not
@@ -248,12 +333,19 @@ def getReferenceData (refID):
 if __name__ == '__main__':
 	idfield = ''
 	try:
+		zip = False
 		params = parseParameters()
+		if 'zip' in params:
+			zip = True
+			
 		if 'id' in params:
 			idfield = params['id']
 			if (' ' in params['id']) or (',' in params['id']):
 				accids = params['id'].replace(',', ' ').split()
-				sendForm(accids)
+				if zip:
+					sendZip(accids)
+				else:
+					sendForm(accids)
 			else:
 				sendPDF(params['id'])
 		else:
