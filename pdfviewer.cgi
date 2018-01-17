@@ -248,6 +248,14 @@ def sendZip(refIDs):
 			
 		pdfFiles.append( (filepath, newFilename) )
 
+	# To get the user the desired newFilename in the zip file, we need to make symbolic links from
+	# newFilename to the original filepath.  We can put these in /tmp and then remove them when done.
+	
+	symlinks = []
+	for (filepath, newFilename) in pdfFiles:
+		symlinks.append('/tmp/' + newFilename)
+		os.symlink(filepath, symlinks[-1])
+	
 	# if we made it here, then we've confirmed that all the relevant IDs and files exist, so go
 	# ahead with producing the zip output
 	
@@ -259,7 +267,7 @@ def sendZip(refIDs):
 	# -@ means to take input filenames from stdin
 	# -j means to discard (junk) the paths and keep only the filenames in the zip file
 	zipProcess = subprocess.Popen(['/usr/bin/zip', '-@', '-j', zipFilepath], stdin=subprocess.PIPE)
-	for (filepath, newFilename) in pdfFiles:
+	for filepath in symlinks:
 		zipProcess.stdin.write(filepath + '\n')
 	zipProcess.stdin.flush()
 	zipProcess.stdin.close()
@@ -269,6 +277,9 @@ def sendZip(refIDs):
 		sendForm(accids = [refID], error = "Could not build zip file (code %d, stderr %s)" % (returnCode, stderr))
 		return
 	
+	for symlink in symlinks:
+		os.unlink(symlink)
+		
 	print 'Content-type: application/zip'
 	print 'Content-Disposition: inline; filename="%s"' % zipFilename
 	print
