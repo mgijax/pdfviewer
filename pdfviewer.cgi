@@ -73,6 +73,7 @@ function formSubmit() {
 <FORM ID="pdfForm" ACTION="pdfviewer.cgi" METHOD="GET" onSubmit="formSubmit()">
 Enter the ID for a reference to retrieve:
 <INPUT TYPE="text" NAME="id" WIDTH="30" ID="accids" VALUE="%s">
+<INPUT TYPE="checkbox" NAME="zip" ID="zip"> As ZIP File
 &nbsp;&nbsp;<input type="submit" name="Go" value="Go" />
 <p>
 Help:<br/>
