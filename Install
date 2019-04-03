@@ -8,7 +8,7 @@ if [ ! -e ./Configuration ]; then
     exit 1
 fi
 
-CACHE_DIR=`grep 'CACHE_DIR' ./Configuration | awk '{print $2}'`
+CACHE_DIR=`grep '^CACHE_DIR' ./Configuration | awk '{print $2}'`
 
 if [ ! -d ${CACHE_DIR} ]; then
     mkdir ${CACHE_DIR}
@@ -20,6 +20,28 @@ if [ ! -d ${CACHE_DIR} ]; then
     chmod a+rx ${CACHE_DIR}
     if [ $? -ne 0 ]; then
         echo "Cannot chmod ${CACHE_DIR}"
+        exit 1
+    fi
+fi
+
+UPLOAD_DIR=`grep '^UPLOAD_DIR' ./Configuration | awk '{print $2}'`
+
+if [ ! -d ${UPLOAD_DIR} ]; then
+    mkdir ${UPLOAD_DIR}
+    if [ $? -ne 0 ]; then
+        echo "Cannot create ${UPLOAD_DIR}"
+        exit 1
+    fi
+
+    chmod a+rx ${UPLOAD_DIR}
+    if [ $? -ne 0 ]; then
+        echo "Cannot chmod ${UPLOAD_DIR}"
+        exit 1
+    fi
+
+    chgrp www ${UPLOAD_DIR}	# so splitter.cgi can write uploaded files
+    if [ $? -ne 0 ]; then
+        echo "Cannot chgrp ${UPLOAD_DIR}"
         exit 1
     fi
 fi

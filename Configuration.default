@@ -1,2 +1,11 @@
 # where the cache files will be written
 CACHE_DIR	/data/pdfviewer/
+# where uploaded PDF files are stored during text extraction
+UPLOAD_DIR	/data/pdfviewer/tmp/
+# where the MGI PDF files live
+PDF_STORAGE_BASE_PATH /data/littriage/
+
+PYTHONPATH	/usr/local/mgi/live/lib/python
+
+# if True, splitter.cgi outputs debug info
+DEBUG		False
