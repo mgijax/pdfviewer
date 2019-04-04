@@ -143,13 +143,18 @@ def getReferenceInfo (refID):
 
     # get path to PDF file
     pdfPath, error = getPdfFilePath(refInfo.mgiID)
-    if error: return error
+    if error:
+	return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
+					    refInfo.title, refInfo.citation])
 
     debug("pdf path: '%s'" % pdfPath)
 
     # extract text
     extractedText, error = extractTextFromPDF(pdfPath)
-    if error: return error
+    if error:
+	return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
+					    refInfo.title, refInfo.citation])
+
 
     refInfo.extractedText = extractedText
 
@@ -408,7 +413,7 @@ def getParameters():
 	    debug( "Class: %s" % params[k].__class__)
 	    debug( repr(params[k].__dict__) + '<br>' )
 	else:				# assume we have a string
-	    params[k] = form.getvalue(k)
+	    params[k] = str(form.getvalue(k)).strip()
 	    debug( "%s: '%s'" % (k, params[k]) )
 	if k == 'debug':	# not sure we can make this work w/ POST
 	    DEBUG = (params[k] == 'true')
