@@ -145,6 +145,8 @@ def getReferenceInfo (refID):
     pdfPath, error = getPdfFilePath(refInfo.mgiID)
     if error: return error
 
+    debug("pdf path: '%s'" % pdfPath)
+
     # extract text
     extractedText, error = extractTextFromPDF(pdfPath)
     if error: return error
@@ -212,7 +214,7 @@ def getPdfFilePath(mgiID):
 	error = "Cannot find file: %s" % filePath
 	filePath = None
 
-    return filePath, None
+    return filePath, error
 # ----------------------------
 
 def extractTextFromPDF(pdfPathName):
