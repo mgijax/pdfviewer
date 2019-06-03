@@ -267,7 +267,7 @@ def sendZip(refIDs):
 	
 	# -@ means to take input filenames from stdin
 	# -j means to discard (junk) the paths and keep only the filenames in the zip file
-	zipProcess = subprocess.Popen(['/usr/bin/zip', '-@', '-j', zipFilepath], stdin=subprocess.PIPE)
+	zipProcess = subprocess.Popen(['/usr/bin/zip', '-@', '-q', '-j', zipFilepath], stdin=subprocess.PIPE)
 	for filepath in symlinks:
 		zipProcess.stdin.write(filepath + '\n')
 	zipProcess.stdin.flush()
