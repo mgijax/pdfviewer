@@ -9,7 +9,6 @@ import cgi
 import types
 import sys
 sys.path.insert(0, '/usr/local/mgi/live/lib/python')
-sys.path.insert(0, '/home/jsb/jax/prod/lib/python')
 
 import pg_db
 import Pdfpath
