@@ -255,7 +255,8 @@ def sendZip(refIDs):
 	symlinks = []
 	for (filepath, newFilename) in pdfFiles:
 		symlinks.append('/tmp/' + newFilename)
-		os.symlink(filepath, symlinks[-1])
+		if not os.path.exists(symlinks[-1]):
+			os.symlink(filepath, symlinks[-1])
 	
 	# if we made it here, then we've confirmed that all the relevant IDs and files exist, so go
 	# ahead with producing the zip output
