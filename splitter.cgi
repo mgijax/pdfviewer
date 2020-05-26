@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!./python
 
 # splitter.cgi
 # CGI for generating a web page that supports curators looking at the
@@ -10,7 +10,6 @@
 
 # ----------------------------
 import sys
-import string
 import cgi
 import os
 import os.path
@@ -51,7 +50,7 @@ BASE_PDFVIEWER_URL = './pdfviewer.cgi'
 # ----------------------------
 
 def debug(msg):
-    if DEBUG: print '<br>' + msg
+    if DEBUG: print('<br>' + msg)
 
 # ----------------------------
 class ReferenceInfo (object):
@@ -60,18 +59,18 @@ class ReferenceInfo (object):
     Has the relevant info for us
     """
     def __init__(self, pubmedID, mgiID, jnumID, citation, title,
-		    referenceType, isReview, isDiscard, extractedText):
-	self.pubmedID      = pubmedID
-	self.mgiID         = mgiID
-	self.jnumID        = jnumID
-	self.citation      = citation
-	self.title         = title
-	self.referenceType = referenceType
-	self.isReview      = str(isReview)
-	self.isDiscard     = str(isDiscard)
-	self.extractedText = extractedText	# text extracted from the PDF
+                    referenceType, isReview, isDiscard, extractedText):
+        self.pubmedID      = pubmedID
+        self.mgiID         = mgiID
+        self.jnumID        = jnumID
+        self.citation      = citation
+        self.title         = title
+        self.referenceType = referenceType
+        self.isReview      = str(isReview)
+        self.isDiscard     = str(isDiscard)
+        self.extractedText = extractedText      # text extracted from the PDF
 
-	self.pdfLink       = ''			# html for URL link to the PDF
+        self.pdfLink       = ''                 # html for URL link to the PDF
 # ----------------------------
 
 def setDB():
@@ -79,12 +78,12 @@ def setDB():
     set db connection
     """
     if hasMasterConfig:
-	db.set_sqlServer(masterConfig.MGD_DBSERVER)
-	db.set_sqlDatabase(masterConfig.MGD_DBNAME)
-	db.set_sqlUser(masterConfig.MGD_DBUSER)
-	db.set_sqlPasswordFromFile(masterConfig.MGD_DBPASSWORDFILE)
+        db.set_sqlServer(masterConfig.MGD_DBSERVER)
+        db.set_sqlDatabase(masterConfig.MGD_DBNAME)
+        db.set_sqlUser(masterConfig.MGD_DBUSER)
+        db.set_sqlPasswordFromFile(masterConfig.MGD_DBPASSWORDFILE)
     else:
-	db.set_sqlLogin('mgd_public', 'mgdpub', 'mgi-adhoc', 'mgd')
+        db.set_sqlLogin('mgd_public', 'mgdpub', 'mgi-adhoc', 'mgd')
     debug('hitting %s %s' % (db.get_sqlServer(), db.get_sqlDatabase()) )
 
 # ----------------------------
@@ -95,10 +94,10 @@ def canReadFromDatabase():
     Return True if okay, False if not
     """
     try:
-	db.sql('select lastdump_date from mgi_dbinfo', 'auto')
+        db.sql('select lastdump_date from mgi_dbinfo', 'auto')
     except:
-	debug("no db connection")
-	return False
+        debug("no db connection")
+        return False
 
     debug("have db connection")
     return True
@@ -106,19 +105,19 @@ def canReadFromDatabase():
 
 def writeHeader():
 
-    print """Content-type: text/html
+    print("""Content-type: text/html
 
-	<HTML><HEAD><TITLE>Extracted Text Section Splitting</TITLE>
-	<STYLE>
-	table, th, td { border: 1px solid black; }
-	.header { border: thin solid black; vertical-align: top; font-weight: bold }
-	.value { border: thin solid black; vertical-align: top; }.highlight { background-color: yellow; }
-	.right { text-align: right; }
-	</STYLE>
-	</HEAD>
-	<BODY>
-	<H3>Extracted Text Split Viewer</H3>
-	"""
+        <HTML><HEAD><TITLE>Extracted Text Section Splitting</TITLE>
+        <STYLE>
+        table, th, td { border: 1px solid black; }
+        .header { border: thin solid black; vertical-align: top; font-weight: bold }
+        .value { border: thin solid black; vertical-align: top; }.highlight { background-color: yellow; }
+        .right { text-align: right; }
+        </STYLE>
+        </HEAD>
+        <BODY>
+        <H3>Extracted Text Split Viewer</H3>
+        """)
 # ----------------------------
 
 def getReferenceInfo (refID):
@@ -128,39 +127,39 @@ def getReferenceInfo (refID):
     or an error message
     """
     setDB()
-    if not canReadFromDatabase():	# get MGI/Jnum IDs from cached ID files
-	try:
-	    searcher = IDCache.CacheSearcher()
-	    mgiID, jnumID =  searcher.lookup(refID)
-	except:
-	    return str(sys.exc_info()[1])
-	noDB = "not available"
-	refInfo = ReferenceInfo('', mgiID, jnumID, noDB, noDB, '', '', '',
-								'no text yet')
-    else:				# get info from db
-	refInfo, error = getReferenceInfoFromDB(refID)
-	if refInfo == None: return error
+    if not canReadFromDatabase():       # get MGI/Jnum IDs from cached ID files
+        try:
+            searcher = IDCache.CacheSearcher()
+            mgiID, jnumID =  searcher.lookup(refID)
+        except:
+            return str(sys.exc_info()[1])
+        noDB = "not available"
+        refInfo = ReferenceInfo('', mgiID, jnumID, noDB, noDB, '', '', '',
+                                                                'no text yet')
+    else:                               # get info from db
+        refInfo, error = getReferenceInfoFromDB(refID)
+        if refInfo == None: return error
 
     # get path to PDF file
     pdfPath, error = getPdfFilePath(refInfo.mgiID)
     if error:
-	return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
-					    refInfo.title, refInfo.citation])
+        return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
+                                            refInfo.title, refInfo.citation])
 
     debug("pdf path: '%s'" % pdfPath)
 
     # extract text
     extractedText, error = extractTextFromPDF(pdfPath)
     if error:
-	return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
-					    refInfo.title, refInfo.citation])
+        return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
+                                            refInfo.title, refInfo.citation])
 
 
     refInfo.extractedText = extractedText
 
     # create PDF link using the pdfviewer cgi
     refInfo.pdfLink = '<a href="%s?id=%s" target="_blank">PDF</a>' % \
-					(BASE_PDFVIEWER_URL, refInfo.mgiID)
+                                        (BASE_PDFVIEWER_URL, refInfo.mgiID)
     return refInfo
 # ----------------------------
 
@@ -168,35 +167,35 @@ def getReferenceInfoFromDB(refID):
     """
     given a reference ID (Jnum, MGI id, pubmed, etc), get refInfo from db.
     Return pair (refInfo, error)
-	refInfo =  ReferenceInfo object or None
-	if refInfo == None, error = error message
+        refInfo =  ReferenceInfo object or None
+        if refInfo == None, error = error message
     """
     error   = None
     refInfo = None
     query = '''select c.jnumID, c.mgiID, c.pubmedID, c.citation as citation,
-		b.title, c.referenceType, c.isreviewarticle as isReview,
-		c.isDiscard
-	    from bib_citation_cache c, acc_accession a, bib_refs b
-	    where a._MGIType_key = 1
-		and a._Object_key = c._Refs_key
-		and b._refs_key   = c._Refs_key
-		and lower(a.accID) = '%s' ''' % refID.lower()
+                b.title, c.referenceType, c.isreviewarticle as isReview,
+                c.isDiscard
+            from bib_citation_cache c, acc_accession a, bib_refs b
+            where a._MGIType_key = 1
+                and a._Object_key = c._Refs_key
+                and b._refs_key   = c._Refs_key
+                and lower(a.accID) = '%s' ''' % refID.lower()
     results = db.sql(query, 'auto')
 
     if len(results) == 0:
-	error = "Cannot find a reference with ID '%s'" % str(refID)
+        error = "Cannot find a reference with ID '%s'" % str(refID)
     else:
-	r = results[0]
-	refInfo = ReferenceInfo(r['pubmedID'],
-				r['mgiID'],
-				r['jnumID'],
-				r['citation'],
-				r['title'],
-				r['referenceType'],
-				r['isReview'],
-				r['isDiscard'],
-				'no text yet',
-				)
+        r = results[0]
+        refInfo = ReferenceInfo(r['pubmedID'],
+                                r['mgiID'],
+                                r['jnumID'],
+                                r['citation'],
+                                r['title'],
+                                r['referenceType'],
+                                r['isReview'],
+                                r['isDiscard'],
+                                'no text yet',
+                                )
     return refInfo, error
 # ----------------------------
 
@@ -210,14 +209,14 @@ def getPdfFilePath(mgiID):
     prefix, numeric = mgiID.split(':')
 
     try:
-	filePath = os.path.join(Pdfpath.getPdfpath(PDF_STORAGE_BASE_PATH,mgiID),
-							    numeric + '.pdf')
+        filePath = os.path.join(Pdfpath.getPdfpath(PDF_STORAGE_BASE_PATH,mgiID),
+                                                            numeric + '.pdf')
     except:
-	return None, str(sys.exc_info()[1])
+        return None, str(sys.exc_info()[1])
 
     if not os.path.exists(filePath):
-	error = "Cannot find file: %s" % filePath
-	filePath = None
+        error = "Cannot find file: %s" % filePath
+        filePath = None
 
     return filePath, error
 # ----------------------------
@@ -226,8 +225,8 @@ def extractTextFromPDF(pdfPathName):
     """
     Extract text from the PDF file.
     Return (text, error)
-	If text == None, error has a message.
-	If text != None, it is the extracted text
+        If text == None, error has a message.
+        If text != None, it is the extracted text
     """
     text  = None
     error = None
@@ -235,10 +234,10 @@ def extractTextFromPDF(pdfPathName):
     cmd = 'pdftotext -enc ASCII7 -q -nopgbrk %s -' % (pdfPathName)
     stdout, stderr, retcode = runCommand.runCommand(cmd) 
     if retcode != 0:
-	error = "pdftotext error: %d<p>%s<p>%s<p>%s" % \
-						(retcode, cmd, stderr, stdout)
+        error = "pdftotext error: %d<p>%s<p>%s<p>%s" % \
+                                                (retcode, cmd, stderr, stdout)
     else:
-	text = stdout
+        text = stdout
 
     return text, error
 # ----------------------------
@@ -247,7 +246,7 @@ def getUploadedPDF(uploadDesc):
     """
     Get extracted text from uploaded PDF.
     Return Reference object if no errors,
-	else return error message
+        else return error message
     JIM: make this more error/exception tolerent
     """
     # Set pathName where to write the tmp PDF file so we can run pdftotext
@@ -257,39 +256,39 @@ def getUploadedPDF(uploadDesc):
     pathName   = os.path.join(UPLOAD_DIR, uFileName)
 
     try:
-	# Read it into contents
-	contents = uploadDesc.file.read()
-	debug('contents length %d' % len(contents))
+        # Read it into contents
+        contents = uploadDesc.file.read()
+        debug('contents length %d' % len(contents))
 
-	# Write contents to pathName
-	debug('writing %s' % pathName)
-	fp = open(pathName, 'wb')
-	fp.write(contents)
-	fp.close()
-	os.chmod(pathName, 0666)  # all rw so anyone can rm if things crap out
+        # Write contents to pathName
+        debug('writing %s' % pathName)
+        fp = open(pathName, 'wb')
+        fp.write(contents)
+        fp.close()
+        os.chmod(pathName, 0o666)  # all rw so anyone can rm if things crap out
 
-	# Extract text, get rid of tmp PDF file
-	extractedText, error = extractTextFromPDF(pathName)
+        # Extract text, get rid of tmp PDF file
+        extractedText, error = extractTextFromPDF(pathName)
 
-	os.remove(pathName)
-	debug('removed %s' % pathName)
+        os.remove(pathName)
+        debug('removed %s' % pathName)
     except:
-	error = str(sys.exc_info()[1])
+        error = str(sys.exc_info()[1])
 
     if error: return error
 
     # Build/return refInfo
     noDB = "N/A"
-    refInfo = ReferenceInfo('',				# pubmedID
-			    '',				# mgiID
-			    '',				# jnumID
-			    "Uploaded: %s" % fileName,	# filename as "citation"
-			    '',				# title
-			    '',				# ref type
-			    noDB,			# isreview
-			    noDB,			# isdiscard
-			    extractedText,
-			    )
+    refInfo = ReferenceInfo('',                         # pubmedID
+                            '',                         # mgiID
+                            '',                         # jnumID
+                            "Uploaded: %s" % fileName,  # filename as "citation"
+                            '',                         # title
+                            '',                         # ref type
+                            noDB,                       # isreview
+                            noDB,                       # isdiscard
+                            extractedText,
+                            )
     refInfo.pdfLink = 'N/A'
 
     return refInfo
@@ -302,7 +301,7 @@ def buildReferenceDetails(refInfo):
     splitter = extractedTextSplitter.ExtTextSplitter()
 
     bodyS, refsS, mfigS, starS, suppS = splitter.findSections( \
-							refInfo.extractedText)
+                                                        refInfo.extractedText)
     reason = refsS.reason
     refStart = refsS.sPos
     lenText = len(refInfo.extractedText)
@@ -314,27 +313,27 @@ def buildReferenceDetails(refInfo):
     '''
     <TABLE>
     <TR>
-	<TH>Link</TH>
-	<TH>IDs</TH>
-	<TH>Title</TH>
-	<TH>Citation</TH>
-	<TH>Other</TH>
+        <TH>Link</TH>
+        <TH>IDs</TH>
+        <TH>Title</TH>
+        <TH>Citation</TH>
+        <TH>Other</TH>
     </TR>
     <TR>
     ''',
-	'<TD> %s </TD>' % pdfLink,
-	'<TD style="font-size: x-small"> %s<br>%s<br>%s </TD>' % \
-			    (refInfo.jnumID, refInfo.mgiID, refInfo.pubmedID),
-	'<TD style="font-size: small"> %s </TD>' % refInfo.title,
-	'<TD style="font-size: small"> %s </TD>' % refInfo.citation,
+        '<TD> %s </TD>' % pdfLink,
+        '<TD style="font-size: x-small"> %s<br>%s<br>%s </TD>' % \
+                            (refInfo.jnumID, refInfo.mgiID, refInfo.pubmedID),
+        '<TD style="font-size: small"> %s </TD>' % refInfo.title,
+        '<TD style="font-size: small"> %s </TD>' % refInfo.citation,
     '''
-	<TD style="font-size: xx-small">
-	    Doc length:&nbsp;%d<br>
-	    %s<br>
-	    isReview:&nbsp;%s<br>
-	    isDiscard:&nbsp;%s<br>
-	</TD>
-    '''	% (lenText, refInfo.referenceType, refInfo.isReview, refInfo.isDiscard),
+        <TD style="font-size: xx-small">
+            Doc length:&nbsp;%d<br>
+            %s<br>
+            isReview:&nbsp;%s<br>
+            isDiscard:&nbsp;%s<br>
+        </TD>
+    ''' % (lenText, refInfo.referenceType, refInfo.isReview, refInfo.isDiscard),
     '''
     <TR>
     </TABLE>
@@ -344,49 +343,49 @@ def buildReferenceDetails(refInfo):
     <b>Body</b> <small>%d to %d, %d chars</small>
     <BR>
     ''' % (bodyS.sPos, bodyS.ePos, bodyS.ePos - bodyS.sPos),
-	'<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
-	 bodyS.text,
-	'</textarea>',
+        '<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
+         bodyS.text,
+        '</textarea>',
     '''
     <p>
     <b>Ref Section</b> <small>%d to %d, %d chars, Reason: "%s"</small>
     <BR>
     ''' % (refsS.sPos, refsS.ePos, refsS.ePos - refsS.sPos, refsS.reason),
-	'<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
-	refsS.text,
-	'</textarea>',
+        '<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
+        refsS.text,
+        '</textarea>',
     '''
     <p>
     <b>Manuscript Figs  Section</b> <small>%d to %d, %d chars, Reason: "%s"</small>
     <BR>
     ''' % (mfigS.sPos, mfigS.ePos, mfigS.ePos - mfigS.sPos, mfigS.reason),
-	'<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
-	mfigS.text,
-	'</textarea>',
+        '<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
+        mfigS.text,
+        '</textarea>',
     '''
     <p>
     <b>Star Methods Section</b> <small>%d to %d, %d chars, Reason: "%s"</small>
     <BR>
     ''' % (starS.sPos, starS.ePos, starS.ePos - starS.sPos, starS.reason),
-	'<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
-	starS.text,
-	'</textarea>',
+        '<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
+        starS.text,
+        '</textarea>',
     '''
     <p>
     <b>Supplemental Data Section</b> <small>%d to %d, %d chars, Reason: "%s"</small>
     <BR>
     ''' % (suppS.sPos, suppS.ePos, suppS.ePos - suppS.sPos, suppS.reason),
-	'<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
-	suppS.text,
-	'</textarea>',
+        '<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
+        suppS.text,
+        '</textarea>',
     '''
     <p>
     <b>Whole extracted text</b> <small>%d chars</small>
     <BR>
     ''' % (lenText),
-	'<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
-	refInfo.extractedText,
-	'</textarea>',
+        '<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
+        refInfo.extractedText,
+        '</textarea>',
     ]
     return '\n'.join(body)
 # ----------------------------
@@ -394,9 +393,9 @@ def buildReferenceDetails(refInfo):
 def getParameters():
     """
     Return dict {formfield_name : value}
-	values are
-	    string if the formfield is a simple param
-	    cgi.FieldStorage object if the formfield is an uploaded file
+        values are
+            string if the formfield is a simple param
+            cgi.FieldStorage object if the formfield is an uploaded file
     Print parameter summary/report if DEBUG
     """
     global DEBUG
@@ -404,19 +403,19 @@ def getParameters():
 
     debug("<p>Parameters")
     params = {}
-    for k in form.keys():
-	#params[k] = form.getvalue(k)
-	params[k] = form[k]
-	if form[k].filename:		# have an uploaded file 
-	    params[k] = form[k]
-	    debug( "%s: upload file '%s'" % (k, params[k].filename) )
-	    debug( "Class: %s" % params[k].__class__)
-	    debug( repr(params[k].__dict__) + '<br>' )
-	else:				# assume we have a string
-	    params[k] = str(form.getvalue(k)).strip()
-	    debug( "%s: '%s'" % (k, params[k]) )
-	if k == 'debug':	# not sure we can make this work w/ POST
-	    DEBUG = (params[k] == 'true')
+    for k in list(form.keys()):
+        #params[k] = form.getvalue(k)
+        params[k] = form[k]
+        if form[k].filename:            # have an uploaded file 
+            params[k] = form[k]
+            debug( "%s: upload file '%s'" % (k, params[k].filename) )
+            debug( "Class: %s" % params[k].__class__)
+            debug( repr(params[k].__dict__) + '<br>' )
+        else:                           # assume we have a string
+            params[k] = str(form.getvalue(k)).strip()
+            debug( "%s: '%s'" % (k, params[k]) )
+        if k == 'debug':        # not sure we can make this work w/ POST
+            DEBUG = (params[k] == 'true')
     debug("End Parameters<p>")
     return params
 # ----------------------------
@@ -431,35 +430,35 @@ def writePage():
     params = getParameters()
 
     form = ['''
-	    <DIV CLASS="search">
-	    <FORM ACTION="splitter.cgi" METHOD="POST" enctype="multipart/form-data">
-	    <b>Ref ID </b>
-	    <INPUT NAME="refID" TYPE="text" SIZE="25" autofocus>
-	    &nbsp;&nbsp; or &nbsp;&nbsp <b> Upload PDF </b>
-	    <INPUT type="file" id="pdffile" name="pdffile" accept=".pdf" >
-	    <INPUT TYPE="submit" VALUE="View Split">
-	    </FORM>
-	    </DIV>
-	    ''']
-	    #'<INPUT NAME="isHidden" TYPE="hidden" VALUE="cannot see me">',
+            <DIV CLASS="search">
+            <FORM ACTION="splitter.cgi" METHOD="POST" enctype="multipart/form-data">
+            <b>Ref ID </b>
+            <INPUT NAME="refID" TYPE="text" SIZE="25" autofocus>
+            &nbsp;&nbsp; or &nbsp;&nbsp <b> Upload PDF </b>
+            <INPUT type="file" id="pdffile" name="pdffile" accept=".pdf" >
+            <INPUT TYPE="submit" VALUE="View Split">
+            </FORM>
+            </DIV>
+            ''']
+            #'<INPUT NAME="isHidden" TYPE="hidden" VALUE="cannot see me">',
     refInfo = ''
 
-    if params.has_key('refID') and params['refID'] != '': # get ref/PDF via ID
-	refInfo = getReferenceInfo(params['refID'])
+    if 'refID' in params and params['refID'] != '': # get ref/PDF via ID
+        refInfo = getReferenceInfo(params['refID'])
 
-    elif params.has_key('pdffile')  \
-		and type(params['pdffile']) != type(''):  # upload PDF
-	refInfo = getUploadedPDF(params['pdffile'])
+    elif 'pdffile' in params  \
+                and type(params['pdffile']) != type(''):  # upload PDF
+        refInfo = getUploadedPDF(params['pdffile'])
 
-    if type(refInfo) == type(''):		# have error msg
-	refDisplay = refInfo
-    else:					# have a reference
-	refDisplay = buildReferenceDetails(refInfo)
+    if type(refInfo) == type(''):               # have error msg
+        refDisplay = refInfo
+    else:                                       # have a reference
+        refDisplay = buildReferenceDetails(refInfo)
 
     body = '\n'.join(form) + refDisplay
     tail = '</BODY></HTML>'
 
-    print body + tail
+    print(body + tail)
     return
 # ----------------------------
 # MAIN

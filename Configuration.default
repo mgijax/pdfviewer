@@ -9,3 +9,6 @@ PYTHONPATH	/usr/local/mgi/live/lib/python
 
 # if True, splitter.cgi outputs debug info
 DEBUG		False
+
+# path to python interpreter
+PYTHON_INT		/opt/python3.7/bin/python3.7
