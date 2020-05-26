@@ -11,7 +11,7 @@
 
 import glob
 import os
-import runCommand
+import subprocess
 import Configuration
 
 ###--- globals ---###
@@ -55,14 +55,14 @@ class CacheSearcher (ProfilerAware):
         if not os.path.exists(searchPath):
             raise Exception("Missing ID Cache File: %s" % searchPath)
         
-        stdout, stderr, exitcode = runCommand.runCommand("grep '^%s\t' %s" % (lowerID, searchPath))
+        exitcode, stdout = subprocess.getstatusoutput("grep '^%s\t' %s" % (lowerID, searchPath))
         if not stdout:
             raise Exception("Cannot find ID %s in cache file %s" % (refID, searchPath))
 
         refsKey = stdout.strip().split('\n')[0].split('\t')[1]
         self.stamp('Found refs key %s for ID %s' % (refsKey, refID))
         
-        stdout, stderr, exitcode = runCommand.runCommand("grep '^%s\t' %s" % (refsKey, lookupPath))
+        exitcode, stdout = subprocess.getstatusoutput("grep '^%s\t' %s" % (refsKey, lookupPath))
         if not stdout:
             raise Exception("Cannot find key %s in lookup file %s" % (refsKey, lookupPath))
 
@@ -115,8 +115,8 @@ class CacheBuilder (ProfilerAware):
             fp.write('%s\t%s\t%s\n' % (row['_Refs_key'], row['mgiid'], row['jnumid']))
             
         fp.close()
-        runCommand.runCommand('chmod o+r %s' % filepath)
-        runCommand.runCommand('chmod g+w %s' % filepath)
+        exitcode, stdout = subprocess.getstatusoutput('chmod o+r %s' % filepath)
+        exitcode, stdout = subprocess.getstatusoutput('chmod g+w %s' % filepath)
         self.stamp('Put %d refs in lookup bucket' % len(rows))
         return
     
@@ -142,8 +142,8 @@ class CacheBuilder (ProfilerAware):
 
         for i in range(0, NUM_BUCKETS):
             filepath = os.path.join(CACHE_DIR, SEARCH_FILENAME_PREFIX + str(i))
-            runCommand.runCommand('chmod o+r %s' % filepath)
-            runCommand.runCommand('chmod g+w %s' % filepath)
+            exitcode, stdout = subprocess.getstatusoutput('chmod o+r %s' % filepath)
+            exitcode, stdout = subprocess.getstatusoutput('chmod g+w %s' % filepath)
 
         self.stamp('Put %d IDs in %d buckets' % (len(rows), len(buckets)))
         return

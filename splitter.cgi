@@ -14,6 +14,7 @@ import cgi
 import os
 import os.path
 import time
+import subprocess
 
 sys.path.insert(0, '/usr/local/mgi/live/lib/python')
 import Configuration
@@ -25,7 +26,6 @@ if pathParams != None:
     sys.path = pathItems + sys.path
 
 import pg_db as db
-import runCommand
 import Pdfpath
 import IDCache
 import extractedTextSplitter
@@ -232,7 +232,7 @@ def extractTextFromPDF(pdfPathName):
     error = None
 
     cmd = 'pdftotext -enc ASCII7 -q -nopgbrk %s -' % (pdfPathName)
-    stdout, stderr, retcode = runCommand.runCommand(cmd) 
+    retcode, stdout = subprocess.getstatusoutput(cmd) 
     if retcode != 0:
         error = "pdftotext error: %d<p>%s<p>%s<p>%s" % \
                                                 (retcode, cmd, stderr, stdout)

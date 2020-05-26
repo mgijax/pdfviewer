@@ -5,13 +5,10 @@
 #       by ID even when the database is unavailable
 
 import os
-import cgi
-import types
 import sys
 sys.path.insert(0, '/usr/local/mgi/live/lib/python')
 
 import pg_db
-import Pdfpath
 import IDCache
 import Profiler
 
