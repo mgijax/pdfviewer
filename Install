@@ -8,6 +8,12 @@ if [ ! -e ./Configuration ]; then
     exit 1
 fi
 
+PYTHON=`grep '^PYTHON_INT' ./Configuration | awk '{print $2}'`
+if [ -h ./python ]; then
+        rm ./python
+fi
+ln -s ${PYTHON} python
+
 CACHE_DIR=`grep '^CACHE_DIR' ./Configuration | awk '{print $2}'`
 
 if [ ! -d ${CACHE_DIR} ]; then
