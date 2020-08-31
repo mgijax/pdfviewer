@@ -45,6 +45,14 @@ DEBUG                 = (config.lookup('DEBUG') == 'True')
 UPLOAD_DIR            = config.get('UPLOAD_DIR')
 PDF_STORAGE_BASE_PATH = config.get('PDF_STORAGE_BASE_PATH')
 
+LITPARSER             = '/usr/local/mgi/live/mgiutils/litparser'
+if hasMasterConfig:
+    LITPARSER = masterConfig.LITPARSER
+
+litparserFromConfig = config.lookup('LITPARSER')
+if litparserFromConfig != None:
+    LITPARSER = litparserFromConfig
+
 BASE_PDFVIEWER_URL = './pdfviewer.cgi'
 
 # ----------------------------
@@ -71,6 +79,7 @@ class ReferenceInfo (object):
         self.extractedText = extractedText      # text extracted from the PDF
 
         self.pdfLink       = ''                 # html for URL link to the PDF
+        self.pdftotextErr  = None
 # ----------------------------
 
 def setDB():
@@ -150,12 +159,12 @@ def getReferenceInfo (refID):
 
     # extract text
     extractedText, error = extractTextFromPDF(pdfPath)
-    if error:
+    if text == None:
         return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
                                             refInfo.title, refInfo.citation])
 
-
     refInfo.extractedText = extractedText
+    refInfo.pdftotextErr  = error
 
     # create PDF link using the pdfviewer cgi
     refInfo.pdfLink = '<a href="%s?id=%s" target="_blank">PDF</a>' % \
@@ -231,13 +240,26 @@ def extractTextFromPDF(pdfPathName):
     text  = None
     error = None
 
-    cmd = 'pdftotext -enc ASCII7 -q -nopgbrk %s -' % (pdfPathName)
-    retcode, stdout = subprocess.getstatusoutput(cmd) 
-    if retcode != 0:
+    #cmd = 'pdftotext -enc ASCII7 -q -nopgbrk %s -' % (pdfPathName)
+    #retcode, stdout = subprocess.getstatusoutput(cmd) 
+    #if retcode != 0:
+    #    error = "pdftotext error: %d<p>%s<p>%s<p>%s" % \
+    #                                            (retcode, cmd, stderr, stdout)
+    #else:
+    #    text = stdout
+
+    executable = os.path.join(LITPARSER, 'pdfGetFullText.sh')
+    cmd = [executable, pdfPathName]
+    cmdText = ' '.join(cmd)
+    completedProcess = subprocess.run(cmd, capture_output=True, text=True)
+    if completedProcess.returncode != 0:
         error = "pdftotext error: %d<p>%s<p>%s<p>%s" % \
-                                                (retcode, cmd, stderr, stdout)
+                        (completedProcess.returncode, cmdText,
+                            completedProcess.stderr, completedProcess.stdout)
     else:
-        text = stdout
+        text = completedProcess.stdout
+        if completedProcess.stderr:
+            error = completedProcess.stderr
 
     return text, error
 # ----------------------------
@@ -275,7 +297,7 @@ def getUploadedPDF(uploadDesc):
     except:
         error = str(sys.exc_info()[1])
 
-    if error: return error
+    if extractedText == None: return error
 
     # Build/return refInfo
     noDB = "N/A"
@@ -289,6 +311,7 @@ def getUploadedPDF(uploadDesc):
                             noDB,                       # isdiscard
                             extractedText,
                             )
+    refInfo.pdftotextErr = error
     refInfo.pdfLink = 'N/A'
 
     return refInfo
@@ -387,6 +410,18 @@ def buildReferenceDetails(refInfo):
         refInfo.extractedText,
         '</textarea>',
     ]
+    if refInfo.pdftotextErr:
+        body += [ \
+        '''
+        <p>
+        <b>Pdftotext stderr</b>
+        <BR>
+        ''',
+            '<textarea rows="%d" cols="%d">' % (textareaHeight, textareaWidth),
+            refInfo.pdftotextErr,
+            '</textarea>',
+        ]
+
     return '\n'.join(body)
 # ----------------------------
 
@@ -431,7 +466,7 @@ def writePage():
 
     form = ['''
             <DIV CLASS="search">
-            <FORM ACTION="splitter.cgi" METHOD="POST" enctype="multipart/form-data">
+            <FORM ACTION="splitter2.cgi" METHOD="POST" enctype="multipart/form-data">
             <b>Ref ID </b>
             <INPUT NAME="refID" TYPE="text" SIZE="25" autofocus>
             &nbsp;&nbsp; or &nbsp;&nbsp <b> Upload PDF </b>
