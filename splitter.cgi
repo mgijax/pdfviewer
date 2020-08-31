@@ -159,7 +159,7 @@ def getReferenceInfo (refID):
 
     # extract text
     extractedText, error = extractTextFromPDF(pdfPath)
-    if text == None:
+    if extractedText == None:
         return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
                                             refInfo.title, refInfo.citation])
 
@@ -239,14 +239,6 @@ def extractTextFromPDF(pdfPathName):
     """
     text  = None
     error = None
-
-    #cmd = 'pdftotext -enc ASCII7 -q -nopgbrk %s -' % (pdfPathName)
-    #retcode, stdout = subprocess.getstatusoutput(cmd) 
-    #if retcode != 0:
-    #    error = "pdftotext error: %d<p>%s<p>%s<p>%s" % \
-    #                                            (retcode, cmd, stderr, stdout)
-    #else:
-    #    text = stdout
 
     executable = os.path.join(LITPARSER, 'pdfGetFullText.sh')
     cmd = [executable, pdfPathName]
@@ -466,7 +458,7 @@ def writePage():
 
     form = ['''
             <DIV CLASS="search">
-            <FORM ACTION="splitter2.cgi" METHOD="POST" enctype="multipart/form-data">
+            <FORM ACTION="splitter.cgi" METHOD="POST" enctype="multipart/form-data">
             <b>Ref ID </b>
             <INPUT NAME="refID" TYPE="text" SIZE="25" autofocus>
             &nbsp;&nbsp; or &nbsp;&nbsp <b> Upload PDF </b>
