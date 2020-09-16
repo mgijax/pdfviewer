@@ -193,6 +193,7 @@ def sendPDF(refID):
         print('Content-type: application/pdf')
         print('Content-Disposition: inline; filename="%s"' % newFilename)
         print()
+        sys.stdout.flush()      # finish writing text
         
         infile = open(filepath, 'rb')
 
@@ -201,7 +202,7 @@ def sendPDF(refID):
         readSize = 256 * 1024 * 1024            # 256 Mb
         chunk = infile.read(readSize)
         while (chunk):
-                sys.stdout.write(chunk)
+                sys.stdout.buffer.write(chunk)  # write binary data
                 chunk = infile.read(readSize)
 
         infile.close() 
@@ -285,6 +286,7 @@ def sendZip(refIDs):
         print('Content-type: application/zip')
         print('Content-Disposition: inline; filename="%s"' % zipFilename)
         print()
+        sys.stdout.flush()      # finish writing text
         
         infile = open(zipFilepath, 'rb')
 
@@ -293,7 +295,7 @@ def sendZip(refIDs):
         readSize = 256 * 1024 * 1024            # 256 Mb
         chunk = infile.read(readSize)
         while (chunk):
-                sys.stdout.write(chunk)
+                sys.stdout.buffer.write(chunk)  # write binary data
                 chunk = infile.read(readSize)
 
         infile.close() 

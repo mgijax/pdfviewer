@@ -1,3 +1,13 @@
+TAG: pdfviewer-6-0-16-4
+DATE: 9/16/2020
+STAFF: jak
+fix writing binary data (PDF and zip files) in pdfviewer.cgi caused by python3
+
+TAG: pdfviewer-6-0-16-3
+DATE: 8/31/2020
+STAFF: jak
+fix splitter.cgi error
+
 TAG: pdfviewer-6-0-16-2
 DATE: 08/31/2020
 STAFF: jak
