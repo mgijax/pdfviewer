@@ -21,6 +21,7 @@ import types
 import sys
 import subprocess
 import datetime
+import time
 sys.path.insert(0, '/usr/local/mgi/live/lib/python')
 
 import pg_db
@@ -93,6 +94,13 @@ Help:<br/>
 '''
 
 ###--- Functions ---###
+
+logOn=False
+startTime = time.time()
+def log(s):
+        if not logOn:
+                return
+        sys.stderr.write('%6.3f : %s\n' % (time.time() - startTime, s))
 
 def parseParameters():
         # Purpose: identify any parameters from the user
@@ -218,6 +226,7 @@ def sendZip(refIDs):
         # go through the input IDs and populate pdfFiles with a tuple for each
 
         for refID in refIDs:
+                log('Working on %s' % refID)
                 try:
                         mgiID, jnum = getReferenceData(refID)
                 except:
@@ -232,10 +241,12 @@ def sendZip(refIDs):
                                 sendForm(accids = [refID], error = "Unknown ID: %s" % refID)
                                 return
 
+                log('Found as %s' % str(mgiID))
                 prefix, numeric = mgiID.split(':')
 
                 filepath = os.path.join(Pdfpath.getPdfpath('/data/littriage', mgiID), numeric + '.pdf')
 
+                log('Identified path as %s' % filepath)
                 if not os.path.exists(filepath):
                         sendForm(accids = [refID], error = "Cannot find file: %s" % filepath)
                         return
@@ -258,7 +269,8 @@ def sendZip(refIDs):
                 symlinks.append('/tmp/' + newFilename)
                 if not os.path.exists(symlinks[-1]):
                         os.symlink(filepath, symlinks[-1])
-        
+        log('Created symlinks')
+
         # if we made it here, then we've confirmed that all the relevant IDs and files exist, so go
         # ahead with producing the zip output
         
@@ -269,12 +281,14 @@ def sendZip(refIDs):
         
         # -@ means to take input filenames from stdin
         # -j means to discard (junk) the paths and keep only the filenames in the zip file
-        zipProcess = subprocess.Popen(['/usr/bin/zip', '-@', '-q', '-j', zipFilepath], stdin=subprocess.PIPE)
+        log('about to create zip file')
+        zipProcess = subprocess.Popen(['/usr/bin/zip', '-@', '-q', '-j', zipFilepath], stdin=subprocess.PIPE, encoding='ascii')
         for filepath in symlinks:
                 zipProcess.stdin.write(filepath + '\n')
         zipProcess.stdin.flush()
         zipProcess.stdin.close()
         returnCode = zipProcess.wait()
+        log('back from zip process')
         
         if returnCode != 0:
                 sendForm(accids = [refID], error = "Could not build zip file (code %d, stderr %s)" % (returnCode, stderr))
@@ -369,4 +383,6 @@ if __name__ == '__main__':
                 if DEBUG:
                         profiler.write()
         except:
+                import traceback
+                traceback.print_exc()
                 sendForm(idfield, error = sys.exc_info()[1])
