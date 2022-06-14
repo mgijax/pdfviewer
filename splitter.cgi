@@ -66,20 +66,17 @@ class ReferenceInfo (object):
     Is a references
     Has the relevant info for us
     """
-    def __init__(self, pubmedID, mgiID, jnumID, citation, title,
-                    referenceType, isReview, isDiscard, extractedText):
-        self.pubmedID      = pubmedID
-        self.mgiID         = mgiID
-        self.jnumID        = jnumID
-        self.citation      = citation
-        self.title         = title
-        self.referenceType = referenceType
-        self.isReview      = str(isReview)
-        self.isDiscard     = str(isDiscard)
-        self.extractedText = extractedText      # text extracted from the PDF
-
-        self.pdfLink       = ''                 # html for URL link to the PDF
-        self.pdftotextErr  = None
+    def __init__(self, pubmedID, mgiID, jnumID, citation, title, referenceType, isreviewarticle, extractedText):
+        self.pubmedID           = pubmedID
+        self.mgiID              = mgiID
+        self.jnumID             = jnumID
+        self.citation           = citation
+        self.title              = title
+        self.referenceType      = referenceType
+        self.isreviewarticle    = str(isreviewarticle)
+        self.extractedText      = extractedText      # text extracted from the PDF
+        self.pdfLink            = ''                 # html for URL link to the PDF
+        self.pdftotextErr       = None
 # ----------------------------
 
 def setDB():
@@ -143,32 +140,28 @@ def getReferenceInfo (refID):
         except:
             return str(sys.exc_info()[1])
         noDB = "not available"
-        refInfo = ReferenceInfo('', mgiID, jnumID, noDB, noDB, '', '', '',
-                                                                'no text yet')
-    else:                               # get info from db
+        refInfo = ReferenceInfo('', mgiID, jnumID, noDB, noDB, '', '', '', 'no text yet')
+    else:  # get info from db
         refInfo, error = getReferenceInfoFromDB(refID)
         if refInfo == None: return error
 
     # get path to PDF file
     pdfPath, error = getPdfFilePath(refInfo.mgiID)
     if error:
-        return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
-                                            refInfo.title, refInfo.citation])
+        return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID, refInfo.title, refInfo.citation])
 
     debug("pdf path: '%s'" % pdfPath)
 
     # extract text
     extractedText, error = extractTextFromPDF(pdfPath)
     if extractedText == None:
-        return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID,
-                                            refInfo.title, refInfo.citation])
+        return '<br>'.join([error, refInfo.mgiID, refInfo.jnumID, refInfo.title, refInfo.citation])
 
     refInfo.extractedText = extractedText
     refInfo.pdftotextErr  = error
 
     # create PDF link using the pdfviewer cgi
-    refInfo.pdfLink = '<a href="%s?id=%s" target="_blank">PDF</a>' % \
-                                        (BASE_PDFVIEWER_URL, refInfo.mgiID)
+    refInfo.pdfLink = '<a href="%s?id=%s" target="_blank">PDF</a>' % (BASE_PDFVIEWER_URL, refInfo.mgiID)
     return refInfo
 # ----------------------------
 
@@ -181,13 +174,12 @@ def getReferenceInfoFromDB(refID):
     """
     error   = None
     refInfo = None
-    query = '''select c.jnumID, c.mgiID, c.pubmedID, c.citation as citation,
-                b.title, c.referenceType, c.isreviewarticle as isReview,
-                c.isDiscard
+    query = '''select c.jnumID, c.mgiID, c.pubmedID, c.citation,
+                b.title, c.referenceType, c.isreviewarticle
             from bib_citation_cache c, acc_accession a, bib_refs b
-            where a._MGIType_key = 1
-                and a._Object_key = c._Refs_key
-                and b._refs_key   = c._Refs_key
+            where a._mgitype_key = 1
+                and a._object_key = c._refs_key
+                and b._refs_key   = c._refs_key
                 and lower(a.accID) = '%s' ''' % refID.lower()
     results = db.sql(query, 'auto')
 
@@ -201,8 +193,7 @@ def getReferenceInfoFromDB(refID):
                                 r['citation'],
                                 r['title'],
                                 r['referenceType'],
-                                r['isReview'],
-                                r['isDiscard'],
+                                r['isreviewarticle'],
                                 'no text yet',
                                 )
     return refInfo, error
@@ -346,9 +337,8 @@ def buildReferenceDetails(refInfo):
             Doc length:&nbsp;%d<br>
             %s<br>
             isReview:&nbsp;%s<br>
-            isDiscard:&nbsp;%s<br>
         </TD>
-    ''' % (lenText, refInfo.referenceType, refInfo.isReview, refInfo.isDiscard),
+    ''' % (lenText, refInfo.referenceType, refInfo.isreviewarticle),
     '''
     <TR>
     </TABLE>
