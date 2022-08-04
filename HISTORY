@@ -1,3 +1,8 @@
+TAG: pdfviewer-6-0-21-1
+DATE: 08/04/2022
+STAFF: sc
+wts2-529/modify pdfviewer to "skip" missing J files (TR13386)
+
 TAG: pdfviewer-6-0-20-1
 DATE: 06/14/2022
 STAFF: lec
