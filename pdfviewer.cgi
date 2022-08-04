@@ -88,6 +88,10 @@ Help:<br/>
 </UL>
 <p>
 %s
+<p>
+%s
+<p>
+%s
 </FORM>
 </BODY>
 </HTML>
@@ -128,20 +132,43 @@ def sendForm(accids = None, error = None):
 
         ids = ''
         myIDs = ''
+        noids = ''
+        nopdfs = ''
         if error:
                 ids = 'Error: %s' % error
 
         elif accids:
-                idList = [
-                        'Your %d requested PDFs are available here:<br/>' % \
-                                len(accids),
-                        '<ul>',
-                        ]
+                #profiler.stamp('sendForm.accids: %s' % accids)
+                noIdList = [
+                        'Reference not in database:<br/><ul>']
+                noPdfList = [
+                        'No PDF for reference:<br/><ul>']
+                #idList = [
+                #        'Your %d requested PDFs are available here:<br/>' % \
+                #                len(accids),
+                #        '<ul>',
+                #        ]
+                idList = []
                 for accid in accids:
-                        idList.append('<li><a href="pdfviewer.cgi?id=%s" target="_blank">%s</a></li>' % (accid, accid))
+                    profiler.stamp('sendForm.accid: %s' % accid)
+                    mgiID, jnum = getReferenceData(accid)
+                    profiler.stamp('sendForm mgiID: %s jnum: %s' % (mgiID, jnum))
+                    if mgiID == None:
+                        noIdList.append('<li>%s</li>' % accid) 
+                        continue
+                    prefix, numeric = mgiID.split(':')
+                    filepath = os.path.join(Pdfpath.getPdfpath('/data/littriage', mgiID), numeric + '.pdf')
 
-                idList.append('</ul>')
-                ids = '\n'.join(idList)
+                    if not os.path.exists(filepath):
+                        noPdfList.append('<li>%s</li>' % accid)
+                        continue
+                    idList.append('<li><a href="pdfviewer.cgi?id=%s" target="_blank">%s</a></li>' % (accid, accid))
+                noIdList.append('</ul>')
+                noPdfList.append('</ul>')
+                noids = '\n'.join(noIdList)               
+                nopdfs = '\n'.join(noPdfList)
+                found = '\n'.join(idList) + '</ul>'
+                ids = '%d of %d requested PDFs are available here:<br/><ul>' %  (len(idList), len(accids)) + found
 
         if accids:
                 myIDs = ','.join(accids)
@@ -149,7 +176,7 @@ def sendForm(accids = None, error = None):
         page = [
                 'Content-type: text/html',
                 '',
-                FORM % (myIDs, ids)
+                FORM % (myIDs, ids, noids, nopdfs)
                 ]
         print('\n'.join(page))
         profiler.stamp("sent form")
@@ -364,6 +391,7 @@ if __name__ == '__main__':
         try:
                 zip = False
                 params = parseParameters()
+                print('params: %s' % params)
                 if 'zip' in params:
                         zip = True
                         
