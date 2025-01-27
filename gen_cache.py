@@ -33,7 +33,7 @@ if hasMasterConfig:
         pg_db.set_sqlUser(masterConfig.MGD_DBUSER)
         pg_db.set_sqlPasswordFromFile(masterConfig.MGD_DBPASSWORDFILE)
 else:
-        pg_db.set_sqlLogin('mgd_public', 'mgdpub', 'mgi-adhoc', 'mgd')
+        pg_db.set_sqlLogin('mgd_public', 'mgdpub', 'mgd')
 
 builder = IDCache.CacheBuilder(pg_db.sql, profiler.stamp)
 builder.cacheIDs()

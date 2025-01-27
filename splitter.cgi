@@ -89,7 +89,7 @@ def setDB():
         db.set_sqlUser(masterConfig.MGD_DBUSER)
         db.set_sqlPasswordFromFile(masterConfig.MGD_DBPASSWORDFILE)
     else:
-        db.set_sqlLogin('mgd_public', 'mgdpub', 'mgi-adhoc', 'mgd')
+        db.set_sqlLogin('mgd_public', 'mgdpub', 'mgd')
     debug('hitting %s %s' % (db.get_sqlServer(), db.get_sqlDatabase()) )
 
 # ----------------------------
