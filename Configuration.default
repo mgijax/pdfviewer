@@ -11,4 +11,4 @@ PYTHONPATH	/usr/local/mgi/live/lib/python
 DEBUG		False
 
 # path to python interpreter
-PYTHON_INT		/opt/python3.8/bin/python3.8
+PYTHON_INT		/opt/python3.12/bin/python3.12
